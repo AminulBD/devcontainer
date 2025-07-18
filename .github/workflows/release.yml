@@ -1,5 +1,5 @@
-name: Build - DevContainer
-run-name: ${{ github.actor }} is triggered the devcontainer build 🚀
+name: Release
+run-name: ${{ github.actor }} is triggered the release 🚀
 on:
   workflow_dispatch: { }
 permissions:
