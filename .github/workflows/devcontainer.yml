@@ -2,6 +2,9 @@ name: Build - DevContainer
 run-name: ${{ github.actor }} is triggered the devcontainer build 🚀
 on:
   workflow_dispatch: { }
+permissions:
+  contents: read
+  packages: write
 jobs:
   amd64:
     runs-on: ubuntu-24.04
@@ -13,10 +16,20 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin 
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build & Push
         run: |
           docker build -t aminulbd/devcontainer:amd64 .
+          docker tag aminulbd/devcontainer:amd64 ghcr.io/aminulbd/devcontainer:amd64
+
           docker push aminulbd/devcontainer:amd64
+          docker push ghcr.io/aminulbd/devcontainer:amd64
 
   arm64:
     runs-on: ubuntu-24.04-arm
@@ -28,10 +41,20 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin 
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build & Push
         run: |
           docker build -t aminulbd/devcontainer:arm64 .
+          docker tag aminulbd/devcontainer:arm64 ghcr.io/aminulbd/devcontainer:arm64
+
           docker push aminulbd/devcontainer:arm64
+          docker push ghcr.io/aminulbd/devcontainer:arm64
 
   backend-combined:
     runs-on: ubuntu-24.04
@@ -41,6 +64,13 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin 
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build & Push combined images
         run: |
           docker manifest create aminulbd/devcontainer \
@@ -48,3 +78,9 @@ jobs:
             --amend aminulbd/devcontainer:arm64
 
           docker manifest push aminulbd/devcontainer
+
+          docker manifest create ghcr.io/aminulbd/devcontainer \
+            --amend ghcr.io/aminulbd/devcontainer:amd64 \
+            --amend ghcr.io/aminulbd/devcontainer:arm64
+
+          docker manifest push ghcr.io/aminulbd/devcontainer
