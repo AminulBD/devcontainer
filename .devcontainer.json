@@ -1,0 +1,72 @@
+{
+    "name": "DevContainer",
+    // "image": "aminulbd/devcontainer", // Uncomment this line to use a pre-built image
+    "build": {
+        "dockerfile": "./Dockerfile",
+        "context": ".",
+        "args": {
+            "PHP_VERSION": "8.4",
+            "NODE_VERSION": "22",
+            "PYTHON_VERSION": "3.11",
+            "GO_VERSION": "1.24.2",
+            "DENO_VERSION": "2.3.1"
+        }
+    },
+    "runArgs": [
+        "--net=host",
+        "--name=devcontainer"
+    ],
+    "mounts": [
+        "type=bind,source=${localEnv:HOME}/.ssh,target=/home/ubuntu/.ssh,readonly"
+    ],
+    "otherPortsAttributes": {
+        "onAutoForward": "ignore"
+    },
+    "customizations": {
+        "jetbrains": {
+            "plugins": [
+                "mobi.hsz.idea.gitignore",
+                "ru.adelf.idea.dotenv",
+                "com.github.catppuccin.jetbrains_icons",
+                "zielu.gittoolbox",
+                "de.espend.idea.php.annotation",
+                "de.espend.idea.php.toolbox",
+                "fr.adrienbrault.idea.symfony2plugin",
+                "org.toml.lang"
+            ]
+        },
+        "vscode": {
+            "settings": {
+                "editor.minimap.enabled": false,
+                "editor.fontSize": 14,
+                "editor.fontLigatures": true,
+                "editor.stickyScroll.enabled": true,
+                "files.autoSave": "onFocusChange",
+                "terminal.integrated.fontSize": 14,
+                "window.autoDetectColorScheme": true,
+                "workbench.preferredLightColorTheme": "GitHub Light",
+                "workbench.preferredDarkColorTheme": "GitHub Dark Default",
+                "workbench.activityBar.location": "top",
+                "workbench.iconTheme": "catppuccin-latte",
+                "workbench.tree.enableStickyScroll": true
+            },
+            "extensions": [
+                "EditorConfig.EditorConfig",
+                "esbenp.prettier-vscode",
+                "Catppuccin.catppuccin-vsc-icons",
+                "GitHub.github-vscode-theme",
+                "redhat.vscode-yaml",
+                "mk12.better-git-line-blame",
+                "xdebug.php-debug",
+                "bmewburn.vscode-intelephense-client",
+                "laravel.vscode-laravel",
+                "wix.vscode-import-cost",
+                "bradlc.vscode-tailwindcss",
+                "Vue.volar",
+                "golang.go",
+                "ms-python.python",
+                "denoland.vscode-deno"
+            ]
+        }
+    }
+}
