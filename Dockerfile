@@ -51,7 +51,7 @@ for v in $(echo $PHP_VERSION | tr "," "\n"); do
   apt install -yq --no-install-recommends --no-install-suggests \
     php$v \
     php$v-fpm \
-    libapache2-mod-php$v \vc
+    libapache2-mod-php$v
     php$v-cli \
     php$v-cgi \
     php$v-mysql \
