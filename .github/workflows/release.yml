@@ -60,7 +60,7 @@ jobs:
           docker push aminulbd/devcontainer:arm64
           docker push ghcr.io/aminulbd/devcontainer:arm64
 
-  backend-combined:
+  combined:
     runs-on: ubuntu-24.04
     needs: [amd64, arm64]
     steps:
@@ -77,7 +77,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push combined images
+      - name: Combine & Push Multi-Arch Manifest
         run: |
           docker manifest create aminulbd/devcontainer \
             --amend aminulbd/devcontainer:amd64 \
