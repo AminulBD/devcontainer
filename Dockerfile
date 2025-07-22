@@ -76,7 +76,7 @@ for v in $(echo $PHP_VERSION | tr "," "\n"); do
     php$v-apcu \
     php$v-memcached \
     php$v-tidy \
-    php$v-pspell \
+    php$v-pspell
 
     if echo "$v" | grep -E '^8\.' > /dev/null; then
       apt install -yq --no-install-recommends --no-install-suggests php$v-swoole
