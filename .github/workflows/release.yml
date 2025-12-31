@@ -1,17 +1,64 @@
 name: Release
-run-name: ${{ github.actor }} is triggered the release 🚀
+run-name: ${{ github.actor }} triggered release 🚀
+
 on:
-  workflow_dispatch: { }
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: false
+        type: string
+      push_latest:
+        description: 'Push to latest tag'
+        required: false
+        type: boolean
+        default: true
+  push:
+    tags:
+      - 'v*.*.*'
+
 permissions:
   contents: read
   packages: write
+  id-token: write
+
+env:
+  DOCKER_IMAGE: aminulbd/devcontainer
+  GHCR_IMAGE: ghcr.io/aminulbd/devcontainer
+
 jobs:
-  amd64:
+  release:
     runs-on: ubuntu-24.04
 
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version metadata
+        id: meta
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION=${{ github.event.inputs.version }}
+          else
+            VERSION="dev"
+          fi
+
+          # Ensure version starts with 'v' if it's a number
+          if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION="v$VERSION"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -31,14 +78,75 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
 
-      - name: Build & Push multi-platform
+      - name: Extract metadata for Docker
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.DOCKER_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
+          tags: |
+            type=raw,value=${{ steps.meta.outputs.version }}
+            type=raw,value=${{ steps.meta.outputs.version }},prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.event_name != 'workflow_dispatch' || github.event.inputs.push_latest == 'true' }}
+            type=sha,prefix={{branch}}-,format=short
+            type=raw,value=${{ steps.meta.outputs.version }}.{{date 'YYYYMMDD'}},enable=${{ steps.meta.outputs.version != 'dev' }}
+          labels: |
+            org.opencontainers.image.title=Aminul's Dev Container
+            org.opencontainers.image.description=Multi-language development container with PHP, Node.js, Go, Deno, and Python
+            org.opencontainers.image.source=https://github.com/AminulBD/devcontainer
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            aminulbd/devcontainer
-            ghcr.io/aminulbd/devcontainer
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VERSION=${{ steps.meta.outputs.version }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=buildkit
+          cache-to: type=gha,scope=buildkit,mode=max
           provenance: false
           sbom: false
+
+      - name: Generate release notes
+        if: steps.meta.outputs.version != 'dev'
+        run: |
+          echo "## 🐳 Docker Images Released" > release_notes.md
+          echo "" >> release_notes.md
+          echo "Version: \`${{ steps.meta.outputs.version }}\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Available Tags:" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- \`${{ env.DOCKER_IMAGE }}:${{ steps.meta.outputs.version }}\`" >> release_notes.md
+          echo "- \`${{ env.DOCKER_IMAGE }}:latest\`" >> release_notes.md
+          echo "- \`${{ env.GHCR_IMAGE }}:${{ steps.meta.outputs.version }}\`" >> release_notes.md
+          echo "- \`${{ env.GHCR_IMAGE }}:latest\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Pull Commands:" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "\`\`\`bash" >> release_notes.md
+          echo "docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.meta.outputs.version }}" >> release_notes.md
+          echo "# OR" >> release_notes.md
+          echo "docker pull ${{ env.GHCR_IMAGE }}:${{ steps.meta.outputs.version }}" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+
+      - name: Upload release notes artifact
+        if: steps.meta.outputs.version != 'dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ steps.meta.outputs.version }}
+          path: release_notes.md
+          retention-days: 30
