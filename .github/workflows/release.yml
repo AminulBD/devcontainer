@@ -20,7 +20,6 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 env:
   DOCKER_IMAGE: aminulbd/devcontainer
