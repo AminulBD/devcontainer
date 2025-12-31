@@ -1,5 +1,11 @@
 FROM ubuntu:24.04
 
+LABEL maintainer="AminulBD <https://github.com/AminulBD>"
+LABEL org.opencontainers.image.title="DevContainer"
+LABEL org.opencontainers.image.description="Multi-language development container with PHP, Node.js, Go, Deno, and Python"
+LABEL org.opencontainers.image.source="https://github.com/AminulBD/devcontainer"
+LABEL org.opencontainers.image.licenses="MIT"
+
 ENV DEBIAN_FRONTEND="noninteractive"
 ARG PHP_VERSION=5.6,7.0,7.1,7.2,7.3,7.4,8.0,8.1,8.2,8.3,8.4,8.5
 ARG NODE_VERSION=14,16,18,20,22,24
