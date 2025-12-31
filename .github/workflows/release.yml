@@ -1,5 +1,5 @@
 name: Release
-run-name: ${{ github.actor }} is triggered the release 🚀
+run-name: ${{ github.actor }} triggered release 🚀
 on:
   workflow_dispatch: { }
 permissions:
