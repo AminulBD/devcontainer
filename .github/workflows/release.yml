@@ -8,6 +8,7 @@ permissions:
 jobs:
   amd64:
     runs-on: ubuntu-24.04
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -25,68 +26,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push
-        run: |
-          docker build -t aminulbd/devcontainer:amd64 .
-          docker tag aminulbd/devcontainer:amd64 ghcr.io/aminulbd/devcontainer:amd64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-          docker push aminulbd/devcontainer:amd64
-          docker push ghcr.io/aminulbd/devcontainer:amd64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  arm64:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Build & Push multi-platform
+        uses: docker/build-push-action@v6
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & Push
-        run: |
-          docker build -t aminulbd/devcontainer:arm64 .
-          docker tag aminulbd/devcontainer:arm64 ghcr.io/aminulbd/devcontainer:arm64
-
-          docker push aminulbd/devcontainer:arm64
-          docker push ghcr.io/aminulbd/devcontainer:arm64
-
-  combined:
-    runs-on: ubuntu-24.04
-    needs: [amd64, arm64]
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Combine & Push Multi-Arch Manifest
-        run: |
-          docker manifest create aminulbd/devcontainer \
-            --amend aminulbd/devcontainer:amd64 \
-            --amend aminulbd/devcontainer:arm64
-
-          docker manifest push aminulbd/devcontainer
-
-          docker manifest create ghcr.io/aminulbd/devcontainer \
-            --amend ghcr.io/aminulbd/devcontainer:amd64 \
-            --amend ghcr.io/aminulbd/devcontainer:arm64
-
-          docker manifest push ghcr.io/aminulbd/devcontainer
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            aminulbd/devcontainer
+            ghcr.io/aminulbd/devcontainer
+          provenance: false
+          sbom: false
