@@ -201,6 +201,7 @@ EOF
 
 # Switch to non-root user
 USER ubuntu
+WORKDIR /home/ubuntu
 
 # Congfigure ubuntu user
 RUN <<EOF
